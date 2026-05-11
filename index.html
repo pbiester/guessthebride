@@ -20,10 +20,8 @@
         input[type="text"] { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
         input[type="text"]:focus { border-color: var(--accent); outline: none; }
         
-        /* Die Warnmeldung */
         .name-warning { display: none; color: var(--error); font-size: 0.85em; margin-top: 5px; padding-left: 5px; font-weight: bold; }
         
-        /* Matrix */
         .matrix-wrapper { overflow-x: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 12px; }
         table { width: 100%; border-collapse: collapse; min-width: 450px; }
         th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
@@ -95,6 +93,8 @@
     if (passFromUrl) {
         document.getElementById('game-content').style.display = 'block';
         const tbody = document.getElementById('matrixBody');
+        
+        // Matrix aufbauen
         CONFIG.DRESSES.forEach(l => {
             let row = `<tr><td class="dress-label">Kleid ${l}</td>`;
             for (let i=1; i<=6; i++) {
@@ -103,23 +103,37 @@
             row += `<td class="known-cell"><input type="checkbox" name="known${l}" value="Ja"></td>`;
             tbody.innerHTML += row + `</tr>`;
         });
+
+        // NEU: Logik für exklusive Spalten (1:1 Zuordnung)
+        const allRadios = document.querySelectorAll('.matrix-wrapper input[type="radio"]');
+        allRadios.forEach(radio => {
+            radio.addEventListener('change', function() {
+                if (this.checked) {
+                    // Wenn dieser Radio-Button angeklickt wird, suche alle anderen Radios
+                    allRadios.forEach(otherRadio => {
+                        // Wenn ein anderer Button den GLEICHEN Wert (Person) hat, aber in einer ANDEREN Zeile (Name) ist
+                        if (otherRadio !== this && otherRadio.value === this.value && otherRadio.checked) {
+                            otherRadio.checked = false; // Altes Kreuz entfernen
+                        }
+                    });
+                }
+            });
+        });
+
     } else {
         document.getElementById('lock-screen').style.display = 'block';
     }
 
-    // NEU: Namens-Check beim Verlassen des Textfeldes
+    // Namens-Check beim Verlassen des Textfeldes
     document.getElementById('guestName').addEventListener('blur', async function() {
         const nameVal = this.value.trim();
         const warningEl = document.getElementById('nameWarning');
-        warningEl.style.display = 'none'; // Warnung resetten
+        warningEl.style.display = 'none'; 
         
         if (!nameVal || !passFromUrl) return;
 
         try {
-            // Wir hängen das Passwort und den Namen an die URL an
             const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(nameVal)}`;
-            
-            // Standard fetch (ohne no-cors), da wir die JSON-Antwort lesen müssen
             const response = await fetch(checkUrl);
             const data = await response.json();
             
@@ -128,13 +142,27 @@
             }
         } catch (error) {
             console.log("Namens-Check konnte nicht durchgeführt werden.", error);
-            // Wir blockieren den Nutzer bei einem Netzfehler nicht.
         }
     });
 
     // Formular absenden
     document.getElementById('quizForm').onsubmit = async (e) => {
         e.preventDefault();
+
+        // Letzter Check vor dem Absenden: Sind wirklich 6 Personen zugeordnet?
+        // (Da wir Kreuze per JS entfernen, könnte theoretisch eine Zeile wieder leer sein)
+        let allChecked = true;
+        CONFIG.DRESSES.forEach(l => {
+            if (!document.querySelector(`input[name="kleid${l}"]:checked`)) {
+                allChecked = false;
+            }
+        });
+
+        if (!allChecked) {
+            alert("Bitte ordne jedem Kleid eine Person zu!");
+            return;
+        }
+
         const btn = document.getElementById('submitBtn');
         btn.disabled = true;
         btn.innerHTML = "Wird gespeichert...";
@@ -153,11 +181,8 @@
         try {
             await fetch(CONFIG.SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
             
-            // NEU: Schicker Übergang statt nervigem Popup
             document.getElementById('game-content').style.display = 'none';
             document.getElementById('success-screen').style.display = 'block';
-            
-            // Scrollt auf dem Handy sanft wieder nach oben
             window.scrollTo({ top: 0, behavior: 'smooth' });
             
         } catch (err) {
