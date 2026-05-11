@@ -4,48 +4,162 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Guess the Bride</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500&family=Playfair+Display:ital,wght@0,400;0,600;1,400&display=swap" rel="stylesheet">
+    
     <style>
-        :root { --accent: #8A9A86; --bg: #F9F9F7; --text: #2F3E2F; --error: #c0392b; }
-        body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, sans-serif; background: var(--bg); color: var(--text); margin: 0; padding: 15px; display: flex; justify-content: center; }
-        .card { max-width: 600px; width: 100%; background: white; padding: 25px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); }
+        :root { 
+            --accent: #7A8B76; /* Ein etwas weicheres, klassischeres Salbeigrün */
+            --gold: #C5A880; /* Zarter Champagner/Gold-Ton für Details */
+            --bg: #FBFaf7; /* Warmes Naturpapier-Weiß statt kaltem Grau */
+            --text: #4a4a4a; /* Weiches Dunkelgrau, wirkt edler als hartes Schwarz */
+            --card-bg: #FFFFFF;
+        }
+        
+        body { 
+            font-family: 'Montserrat', sans-serif; 
+            background: var(--bg); 
+            color: var(--text); 
+            margin: 0; 
+            padding: 15px; 
+            display: flex; 
+            justify-content: center; 
+            font-weight: 300;
+        }
+        
+        /* Die "Einladungskarte" */
+        .card { 
+            max-width: 600px; 
+            width: 100%; 
+            background: var(--card-bg); 
+            padding: 35px 25px; 
+            border-radius: 8px; /* Weniger rund, wirkt mehr wie Papier */
+            box-shadow: 0 15px 35px rgba(0,0,0,0.04); 
+            border: 1px solid rgba(197, 168, 128, 0.3); /* Zarter Gold-Rahmen */
+            position: relative;
+        }
         
         #lock-screen, #game-content, #success-screen { display: none; width: 100%; }
-        #lock-screen { text-align: center; margin-top: 50px; }
-        #success-screen { text-align: center; padding: 40px 0; }
-        #success-screen h2 { color: var(--accent); font-size: 2em; margin-bottom: 10px; }
+        #lock-screen, #success-screen { text-align: center; padding: 40px 0; }
         
-        h1 { text-align: center; font-weight: 300; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 25px; }
+        /* Typografie */
+        h1, h2 { 
+            font-family: 'Playfair Display', serif; 
+            text-align: center; 
+            color: var(--accent); 
+            margin-bottom: 5px;
+        }
+        h1 { font-size: 2.2em; font-weight: 600; }
+        h2 { font-size: 1.8em; font-weight: 400; font-style: italic; }
         
-        .input-group { position: relative; margin-bottom: 20px; }
-        input[type="text"] { width: 100%; padding: 14px; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 16px; transition: 0.3s; }
-        input[type="text"]:focus { border-color: var(--accent); outline: none; }
+        /* Zier-Element unter Überschrift */
+        .divider {
+            text-align: center;
+            color: var(--gold);
+            font-size: 1.2em;
+            letter-spacing: 4px;
+            margin-bottom: 30px;
+        }
         
-        .name-warning { display: none; color: var(--error); font-size: 0.85em; margin-top: 5px; padding-left: 5px; font-weight: bold; }
+        .input-group { position: relative; margin-bottom: 30px; }
+        input[type="text"] { 
+            width: 100%; 
+            padding: 15px 10px; 
+            border: none;
+            border-bottom: 1px solid #ccc; 
+            background: transparent;
+            font-family: 'Montserrat', sans-serif;
+            font-size: 16px; 
+            transition: 0.3s; 
+            text-align: center;
+        }
+        input[type="text"]:focus { 
+            border-bottom: 1px solid var(--accent); 
+            outline: none; 
+        }
+        input[type="text"]::placeholder { color: #bbb; font-weight: 300; }
         
-        .matrix-wrapper { overflow-x: auto; margin-bottom: 15px; border: 1px solid #eee; border-radius: 12px; }
+        .name-warning { display: none; color: #b05c5c; font-size: 0.8em; margin-top: 8px; text-align: center; }
+        
+        /* Matrix */
+        .matrix-wrapper { overflow-x: auto; margin-bottom: 15px; }
         table { width: 100%; border-collapse: collapse; min-width: 450px; }
-        th, td { padding: 12px 5px; text-align: center; border-bottom: 1px solid #f9f9f9; }
-        .dress-label { text-align: left; padding-left: 15px; font-weight: bold; background: #fafafa; color: var(--accent); }
-        .known-cell { background: #fffdf9; border-left: 1px solid #eee; }
-        .known-header { font-size: 0.65em; color: #999; line-height: 1; }
-
-        input[type="radio"], input[type="checkbox"] { cursor: pointer; transform: scale(1.2); }
+        th, td { padding: 14px 5px; text-align: center; border-bottom: 1px solid #f2f2f2; }
+        th { font-size: 0.8em; color: var(--gold); font-weight: 500; letter-spacing: 1px; text-transform: uppercase; }
         
-        button { width: 100%; padding: 18px; background: var(--accent); color: white; border: none; border-radius: 12px; font-size: 1.1em; cursor: pointer; font-weight: bold; margin-top: 20px; transition: 0.2s; }
-        button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .hint { font-size: 0.75em; color: #999; text-align: center; margin-top: 10px; }
+        .dress-label { 
+            text-align: left; 
+            padding-left: 10px; 
+            font-family: 'Playfair Display', serif; 
+            font-style: italic;
+            font-size: 1.2em;
+            color: var(--accent); 
+        }
+        .known-cell { border-left: 1px dashed #eee; }
+        .known-header { font-size: 0.65em; color: #aaa; line-height: 1.2; text-transform: none; font-style: italic; font-family: 'Playfair Display', serif; }
+
+        /* Zarte Radio Buttons */
+        input[type="radio"], input[type="checkbox"] { 
+            appearance: none; 
+            width: 20px; 
+            height: 20px; 
+            border: 1px solid #ccc; 
+            cursor: pointer; 
+            position: relative; 
+            transition: 0.3s;
+        }
+        input[type="radio"] { border-radius: 50%; }
+        input[type="checkbox"] { border-radius: 3px; }
+        
+        input[type="radio"]:checked, input[type="checkbox"]:checked { 
+            background: var(--accent); 
+            border-color: var(--accent); 
+        }
+        input[type="radio"]:checked::after { 
+            content: ''; position: absolute; top: 5px; left: 5px; width: 8px; height: 8px; background: white; border-radius: 50%; 
+        }
+        input[type="checkbox"]:checked::after {
+            content: '✓'; position: absolute; top: -1px; left: 3px; color: white; font-size: 14px; font-weight: bold;
+        }
+        
+        /* Eleganter Button */
+        button { 
+            width: 100%; 
+            padding: 16px; 
+            background: var(--accent); 
+            color: white; 
+            border: none; 
+            border-radius: 4px; 
+            font-family: 'Montserrat', sans-serif;
+            font-size: 0.9em; 
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            cursor: pointer; 
+            margin-top: 30px; 
+            transition: 0.3s;
+            box-shadow: 0 4px 15px rgba(122, 139, 118, 0.2);
+        }
+        button:hover:not(:disabled) { background: #687964; transform: translateY(-1px); }
+        button:disabled { opacity: 0.6; cursor: not-allowed; box-shadow: none; }
+        
+        .hint { font-size: 0.7em; color: #aaa; text-align: center; margin-top: 15px; font-style: italic; }
     </style>
 </head>
 <body>
 
     <div id="lock-screen">
-        <h2>Halt! 🥂</h2>
-        <p>Zugriff nur über den offiziellen QR-Code vom Tisch.</p>
+        <div class="card">
+            <h2>Oh je...</h2>
+            <p>Zugriff nur über den offiziellen QR-Code vom Tisch.</p>
+        </div>
     </div>
 
     <div id="success-screen">
         <div class="card">
-            <h2>Vielen Dank! 🥂</h2>
+            <h2>Vielen Dank!</h2>
+            <div class="divider">✧ ✧ ✧</div>
             <p>Eure Tipps wurden sicher gespeichert.</p>
             <p>Genießt die Feier, die Auflösung gibt es später!</p>
         </div>
@@ -54,11 +168,12 @@
     <div id="game-content">
         <div class="card">
             <h1>Guess the Bride</h1>
+            <div class="divider">✧ ✧ ✧</div>
             <form id="quizForm">
                 
                 <div class="input-group">
-                    <input type="text" id="guestName" placeholder="Euer Name oder Team" required>
-                    <div id="nameWarning" class="name-warning">⚠️ Dieser Name wurde bereits verwendet. Falls du noch nicht mitgespielt hast, ergänze bitte deinen Nachnamen.</div>
+                    <input type="text" id="guestName" placeholder="Euer Name (oder Tischnummer)" required>
+                    <div id="nameWarning" class="name-warning">Dieser Name wurde bereits verwendet. Falls du noch nicht mitgespielt hast, ergänze bitte z.B. deinen Nachnamen.</div>
                 </div>
                 
                 <div class="matrix-wrapper">
@@ -66,27 +181,23 @@
                         <thead>
                             <tr>
                                 <th rowspan="2"></th>
-                                
-                                <th colspan="6" style="padding-bottom: 2px; font-size: 0.8em; letter-spacing: 1px; color: var(--accent); border-bottom: none;">
-                                    PERSON
-                                </th>
-                                
+                                <th colspan="6" style="border-bottom: none; font-size: 0.9em; color: var(--gold);">Person</th>
                                 <th rowspan="2" class="known-header">Schon<br>bekannt?</th>
                             </tr>
                             <tr>
-                                <th style="padding-top: 2px;">1</th>
-                                <th style="padding-top: 2px;">2</th>
-                                <th style="padding-top: 2px;">3</th>
-                                <th style="padding-top: 2px;">4</th>
-                                <th style="padding-top: 2px;">5</th>
-                                <th style="padding-top: 2px;">6</th>
+                                <th style="padding-top: 0;">1</th>
+                                <th style="padding-top: 0;">2</th>
+                                <th style="padding-top: 0;">3</th>
+                                <th style="padding-top: 0;">4</th>
+                                <th style="padding-top: 0;">5</th>
+                                <th style="padding-top: 0;">6</th>
                             </tr>
                         </thead>
                         <tbody id="matrixBody"></tbody>
                     </table>
                 </div>
                 
-                <p class="hint">Tabelle zum Scrollen wischen →</p>
+                <p class="hint">Tabelle auf kleinen Bildschirmen zum Scrollen wischen →</p>
                 <button type="submit" id="submitBtn">Tipps abschicken</button>
             </form>
         </div>
@@ -101,12 +212,10 @@
     const urlParams = new URLSearchParams(window.location.search);
     const passFromUrl = urlParams.get('p');
 
-    // UI Initialisierung
     if (passFromUrl) {
         document.getElementById('game-content').style.display = 'block';
         const tbody = document.getElementById('matrixBody');
         
-        // Matrix aufbauen
         CONFIG.DRESSES.forEach(l => {
             let row = `<tr><td class="dress-label">Kleid ${l}</td>`;
             for (let i=1; i<=6; i++) {
@@ -116,16 +225,13 @@
             tbody.innerHTML += row + `</tr>`;
         });
 
-        // NEU: Logik für exklusive Spalten (1:1 Zuordnung)
         const allRadios = document.querySelectorAll('.matrix-wrapper input[type="radio"]');
         allRadios.forEach(radio => {
             radio.addEventListener('change', function() {
                 if (this.checked) {
-                    // Wenn dieser Radio-Button angeklickt wird, suche alle anderen Radios
                     allRadios.forEach(otherRadio => {
-                        // Wenn ein anderer Button den GLEICHEN Wert (Person) hat, aber in einer ANDEREN Zeile (Name) ist
                         if (otherRadio !== this && otherRadio.value === this.value && otherRadio.checked) {
-                            otherRadio.checked = false; // Altes Kreuz entfernen
+                            otherRadio.checked = false; 
                         }
                     });
                 }
@@ -136,7 +242,6 @@
         document.getElementById('lock-screen').style.display = 'block';
     }
 
-    // Namens-Check beim Verlassen des Textfeldes
     document.getElementById('guestName').addEventListener('blur', async function() {
         const nameVal = this.value.trim();
         const warningEl = document.getElementById('nameWarning');
@@ -148,26 +253,18 @@
             const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(nameVal)}`;
             const response = await fetch(checkUrl);
             const data = await response.json();
-            
-            if (data.exists) {
-                warningEl.style.display = 'block';
-            }
+            if (data.exists) warningEl.style.display = 'block';
         } catch (error) {
-            console.log("Namens-Check konnte nicht durchgeführt werden.", error);
+            console.log("Namens-Check Fehler.", error);
         }
     });
 
-    // Formular absenden
     document.getElementById('quizForm').onsubmit = async (e) => {
         e.preventDefault();
-
-        // Letzter Check vor dem Absenden: Sind wirklich 6 Personen zugeordnet?
-        // (Da wir Kreuze per JS entfernen, könnte theoretisch eine Zeile wieder leer sein)
+        
         let allChecked = true;
         CONFIG.DRESSES.forEach(l => {
-            if (!document.querySelector(`input[name="kleid${l}"]:checked`)) {
-                allChecked = false;
-            }
+            if (!document.querySelector(`input[name="kleid${l}"]:checked`)) allChecked = false;
         });
 
         if (!allChecked) {
@@ -192,15 +289,13 @@
 
         try {
             await fetch(CONFIG.SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
-            
             document.getElementById('game-content').style.display = 'none';
             document.getElementById('success-screen').style.display = 'block';
             window.scrollTo({ top: 0, behavior: 'smooth' });
-            
         } catch (err) {
             alert('Fehler beim Senden. Bitte Internetverbindung prüfen.');
             btn.disabled = false;
-            btn.innerHTML = "Tipps abschicken";
+            btn.innerHTML = "TIPPS ABSCHICKEN";
         }
     };
 </script>
