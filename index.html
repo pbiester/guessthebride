@@ -358,21 +358,35 @@
         const sendDataWithRetry = async (retries = 4) => {
             for (let i = 0; i < retries; i++) {
                 try {
-                    const response = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
+                    // 1. REMOVED 'mode: no-cors' so we can actually read Google's answer!
+                    const response = await fetch(CONFIG.SCRIPT_URL, { 
+                        method: 'POST', 
+                        body: formData 
+                    });
                     
-                    // Success! Show the success screen
-                    document.getElementById('game-content').style.display = 'none';
-                    document.getElementById('success-screen').style.display = 'block';
-                    window.scrollTo({ top: 0, behavior: 'smooth' });
-                    return; // Exit the loop
+                    // 2. Read the response text from Google Apps Script
+                    const text = await response.text();
+                    
+                    // 3. Explicitly check if Google locked it in successfully
+                    if (text === "Erfolg") {
+                        document.getElementById('game-content').style.display = 'none';
+                        document.getElementById('success-screen').style.display = 'block';
+                        window.scrollTo({ top: 0, behavior: 'smooth' });
+                        return; // Exit the loop, we are done!
+                    } else {
+                        // If it says "System überlastet" or anything else, throw an error to trigger the retry
+                        throw new Error("Server antwortet nicht mit Erfolg: " + text);
+                    }
+                    
                 } catch (err) {
-                    console.log(`Versuch ${i + 1} fehlgeschlagen. Versuche es erneut...`);
-                    // Wait 2 seconds before trying again
-                    await new Promise(resolve => setTimeout(resolve, 2000));
+                    console.log(`Versuch ${i + 1} fehlgeschlagen. Versuche es erneut... Fehler: ${err.message}`);
+                    // Wait 2.5 seconds before trying again
+                    await new Promise(resolve => setTimeout(resolve, 2500));
                 }
             }
-            // If it fails after all retries
-            alert('Das System ist gerade sehr ausgelastet. Bitte versuche es in ein paar Sekunden nochmal!');
+            
+            // If it fails after all retries, tell the user the truth so they don't lose their data!
+            alert('Das System ist gerade sehr ausgelastet. Bitte klicke nochmal auf "Tipps abschicken"!');
             btn.disabled = false;
             btn.innerHTML = "Tipps abschicken";
         };
