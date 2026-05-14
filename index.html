@@ -163,6 +163,16 @@
         
         .hint { font-size: 0.85em; color: #666; text-align: center; margin-top: 15px; font-weight: 500; }
 
+        .name-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .name-row input[type="text"] {
+            flex: 1;
+            width: 100%;
+        }
+
         @media (max-width: 450px) {
             .card { padding: 25px 12px; }
             th, td { padding: 12px 3px; }
@@ -212,8 +222,11 @@
             <form id="quizForm">
                 
                 <div class="input-group">
-                    <input type="text" id="guestName" placeholder="Euer Name" required>
-                    <div id="nameWarning" class="name-warning">Dieser Name wurde bereits verwendet. Bitte ergänze z.B. deinen Nachnamen.</div>
+                    <div class="name-row">
+                        <input type="text" id="guestFirstName" placeholder="Vorname" required>
+                        <input type="text" id="guestLastName" placeholder="Nachname" required>
+                    </div>
+                    <div id="nameWarning" class="name-warning">Dieser Name wurde bereits verwendet. Bitte prüfe deine Eingabe.</div>
                 </div>
                 
                 <div class="matrix-wrapper">
@@ -282,22 +295,29 @@
         document.getElementById('lock-screen').style.display = 'block';
     }
 
-    document.getElementById('guestName').addEventListener('blur', async function() {
-        const nameVal = this.value.trim();
+    async function checkName() {
+        const firstName = document.getElementById('guestFirstName').value.trim();
+        const lastName = document.getElementById('guestLastName').value.trim();
+        const fullName = (firstName + " " + lastName).trim();
+        
         const warningEl = document.getElementById('nameWarning');
         warningEl.style.display = 'none'; 
         
-        if (!nameVal || !passFromUrl) return;
-
+        // Nur prüfen, wenn zumindest ein Teil eingegeben wurde
+        if (!fullName || !passFromUrl) return;
+    
         try {
-            const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(nameVal)}`;
+            const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(fullName)}`;
             const response = await fetch(checkUrl);
             const data = await response.json();
             if (data.exists) warningEl.style.display = 'block';
         } catch (error) {
             console.log("Namens-Check Fehler.", error);
         }
-    });
+    }
+    
+    document.getElementById('guestFirstName').addEventListener('blur', checkName);
+    document.getElementById('guestLastName').addEventListener('blur', checkName);
 
     document.getElementById('quizForm').onsubmit = async (e) => {
         e.preventDefault();
@@ -318,7 +338,9 @@
 
         const formData = new URLSearchParams();
         formData.append('p', passFromUrl);
-        formData.append('name', document.getElementById('guestName').value);
+        const firstName = document.getElementById('guestFirstName').value.trim();
+        const lastName = document.getElementById('guestLastName').value.trim();
+        formData.append('name', (firstName + " " + lastName).trim());
         
         CONFIG.DRESSES.forEach(l => {
             const radio = document.querySelector(`input[name="kleid${l}"]:checked`);
