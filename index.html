@@ -295,7 +295,8 @@
         document.getElementById('lock-screen').style.display = 'block';
     }
 
-    async function checkName() {
+    // UPDATED: Name Check with Auto-Retry
+    async function checkName(retries = 3) {
         const firstName = document.getElementById('guestFirstName').value.trim();
         const lastName = document.getElementById('guestLastName').value.trim();
         const fullName = (firstName + " " + lastName).trim();
@@ -303,22 +304,27 @@
         const warningEl = document.getElementById('nameWarning');
         warningEl.style.display = 'none'; 
         
-        // Nur prüfen, wenn zumindest ein Teil eingegeben wurde
         if (!fullName || !passFromUrl) return;
     
-        try {
-            const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(fullName)}`;
-            const response = await fetch(checkUrl);
-            const data = await response.json();
-            if (data.exists) warningEl.style.display = 'block';
-        } catch (error) {
-            console.log("Namens-Check Fehler.", error);
+        for (let i = 0; i < retries; i++) {
+            try {
+                const checkUrl = `${CONFIG.SCRIPT_URL}?p=${passFromUrl}&checkName=${encodeURIComponent(fullName)}`;
+                const response = await fetch(checkUrl);
+                const data = await response.json();
+                if (data.exists) warningEl.style.display = 'block';
+                return; // Success, exit the loop
+            } catch (error) {
+                console.log(`Namens-Check fehlgeschlagen (Versuch ${i+1}). Versuche es erneut...`);
+                // Wait 1.5 seconds before retrying
+                await new Promise(resolve => setTimeout(resolve, 1500));
+            }
         }
     }
     
-    document.getElementById('guestFirstName').addEventListener('blur', checkName);
-    document.getElementById('guestLastName').addEventListener('blur', checkName);
+    document.getElementById('guestFirstName').addEventListener('blur', () => checkName());
+    document.getElementById('guestLastName').addEventListener('blur', () => checkName());
 
+    // UPDATED: Submit with Auto-Retry
     document.getElementById('quizForm').onsubmit = async (e) => {
         e.preventDefault();
         
@@ -349,16 +355,29 @@
             formData.append(`known${l}`, cb.checked ? "Ja" : "Nein");
         });
 
-        try {
-            await fetch(CONFIG.SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
-            document.getElementById('game-content').style.display = 'none';
-            document.getElementById('success-screen').style.display = 'block';
-            window.scrollTo({ top: 0, behavior: 'smooth' });
-        } catch (err) {
-            alert('Fehler beim Senden. Bitte Internetverbindung prüfen.');
+        const sendDataWithRetry = async (retries = 4) => {
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(CONFIG.SCRIPT_URL, { method: 'POST', mode: 'no-cors', body: formData });
+                    
+                    // Success! Show the success screen
+                    document.getElementById('game-content').style.display = 'none';
+                    document.getElementById('success-screen').style.display = 'block';
+                    window.scrollTo({ top: 0, behavior: 'smooth' });
+                    return; // Exit the loop
+                } catch (err) {
+                    console.log(`Versuch ${i + 1} fehlgeschlagen. Versuche es erneut...`);
+                    // Wait 2 seconds before trying again
+                    await new Promise(resolve => setTimeout(resolve, 2000));
+                }
+            }
+            // If it fails after all retries
+            alert('Das System ist gerade sehr ausgelastet. Bitte versuche es in ein paar Sekunden nochmal!');
             btn.disabled = false;
             btn.innerHTML = "Tipps abschicken";
-        }
+        };
+
+        sendDataWithRetry();
     };
 </script>
 </body>
